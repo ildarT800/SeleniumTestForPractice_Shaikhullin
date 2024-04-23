@@ -7,6 +7,7 @@ namespace Seleniumtest_Shaikhullin;
 public class SeleniumTestsForPractice
 {
     public ChromeDriver driver;
+    public WebDriverWait wait;
 
     [SetUp]
     public void Setup()
@@ -17,14 +18,14 @@ public class SeleniumTestsForPractice
         driver = new ChromeDriver();
         driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(7);
         
-        Authorizationn();
+        wait = new WebDriverWait(driver, TimeSpan.FromSeconds(5));
+        
+        Authorization();
     }
     
     [Test]
-    public void Authorization()
+    public void AuthorizationTest()
     {
-        // Проверяем, что находимся на нужной странице и авторизация прошла
-        var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(5));
         wait.Until(
             SeleniumExtras.WaitHelpers.ExpectedConditions.UrlContains("https://staff-testing.testkontur.ru/news"));
     }
@@ -35,50 +36,52 @@ public class SeleniumTestsForPractice
         var sideMenu = driver.FindElement(By.CssSelector("[data-tid='SidebarMenuButton']"));
         sideMenu.Click();
         var community = driver.FindElements(By.CssSelector("[data-tid='Community']"))
-            .First(element => element.Displayed);
+            .Last(element => element.Displayed);
         community.Click();
-        Assert.That(driver.Url == "https://staff-testing.testkontur.ru/communities",
-            "Ожидался Url https://staff-testing.testkontur.ru/communities, а получили " + driver.Url);
+        wait.Until(
+            SeleniumExtras.WaitHelpers.ExpectedConditions.UrlContains("https://staff-testing.testkontur.ru/communities"));
     }
 
     [Test]
-    public void CheckTitleNews()
+    public void CheckTitleNewsPage()
     {
-        var pageTitle = driver.FindElement(By.CssSelector("[data-tid='Title']"));
-        Assert.That(pageTitle.Text == "Новости", "Ожидалось получить заголовок 'Новости' в разделе 'Новости', а получили заголовок " + pageTitle.Text);
+        CheckTitlePage("Новости");
     }
     
+
     [Test]
-    public void CheckTitleMessages()
+    public void CheckTitleMessagesPage()
     {
-        var downloadFinish = driver.FindElement(By.CssSelector("[data-tid='News']"));
+        wait.Until(
+            SeleniumExtras.WaitHelpers.ExpectedConditions.UrlContains("https://staff-testing.testkontur.ru/news"));
         driver.Navigate().GoToUrl("https://staff-testing.testkontur.ru/messages");
-        var pageTitle = driver.FindElement(By.CssSelector("[data-tid='Title']"));
-        Assert.That(pageTitle.Text == "Диалоги", "Ожидалось получить заголовок 'Диалоги' в разделе 'Диалоги', а получили заголовок " + pageTitle.Text);
+        CheckTitlePage("Диалоги");
     }
     
     [Test]
-    public void ExitTest()
+    public void LogOutTest()
     {
         var sideMenu = driver.FindElement(By.CssSelector("[data-tid='SidebarMenuButton']"));
         sideMenu.Click();
         var logoutButton = driver.FindElement(By.CssSelector("[data-tid='LogoutButton']"));
         logoutButton.Click();
         driver.Navigate().GoToUrl("https://staff-testing.testkontur.ru/communities");
-        var login = driver.FindElement(By.Id("Username"));
+        wait.Until(
+            SeleniumExtras.WaitHelpers.ExpectedConditions.UrlContains("https://staff-testing.testkontur.ru/Account/Login"));
         Assert.That(driver.Url != "https://staff-testing.testkontur.ru/communities",
             "Ожидался выход из учетной записи");
     }
+    
     // Баг на сайте. Нет заголовка 'Мероприятия'
     // [Test]
     // public void CheckTitleEvents()
     // {
     //     var pageTitle = driver.FindElement(By.CssSelector("[data-tid='Title']"));
     //     driver.Navigate().GoToUrl("https://staff-testing.testkontur.ru/events");
-    //     pageTitle = driver.FindElement(By.CssSelector("[data-tid='Title']"));
-    //     Assert.That(pageTitle.Text == "Мероприятия", "Ожидалось получить заголовок Мероприятия в разделе Мероприятия, а получили заголовок " + pageTitle.Text);
+    //     CheckTitlePage("Мероприятия");
     // }
-    public void Authorizationn()
+    
+    public void Authorization()
     {
         driver.Navigate().GoToUrl("https://staff-testing.testkontur.ru");
         
@@ -89,6 +92,12 @@ public class SeleniumTestsForPractice
         
         var loginButton = driver.FindElement(By.Name("button"));
         loginButton.Click();
+    }
+    
+    private void CheckTitlePage(String expectedTitle)
+    {
+        var pageTitle = driver.FindElement(By.CssSelector("[data-tid='Title']"));
+        Assert.That(pageTitle.Text == expectedTitle, $"Ожидалось получить заголовок \"{expectedTitle}\" в разделе \"{expectedTitle}\", а получили заголовок \"{pageTitle.Text}\"");
     }
     
     [TearDown]
